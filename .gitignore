@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# Additional ignores for local development
+MongoDB LifeOPS Agent API key Details.txt
