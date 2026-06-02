@@ -1,5 +1,0 @@
-API key details
-API Key: AQ.Ab8RN6Lq2iGWtCMmqTdaNUNXuPg_PxEBIviAyCMhUZFJo4RxsA
-Name: MongoDB LifeOPS Agent API key
-Project name: projects/774911779518
-Project number: 774911779518
