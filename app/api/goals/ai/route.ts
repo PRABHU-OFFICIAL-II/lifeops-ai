@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
 
     const db = await getDb();
 
-    // Create Goal
     const goalResult = await db.collection("goals").insertOne({
       title: body.title,
       status: "active",
@@ -19,13 +18,16 @@ export async function POST(req: NextRequest) {
 
     const goalId = goalResult.insertedId;
 
-    // Generate Plan
     const plan = await generatePlan(body.title);
-    // console.log("PLAN:");
-    // console.log(JSON.stringify(plan, null, 2));
+
+    console.log(
+      "Generated Plan:",
+      JSON.stringify(plan, null, 2),
+    );
+
     await logActivity(
-      "AI_PLAN_GENERATED",
-      `Generated AI plan for ${body.title}`,
+      "GOAL_CREATED",
+      `Created goal: ${body.title}`,
     );
 
     let projectsCreated = 0;
@@ -36,25 +38,51 @@ export async function POST(req: NextRequest) {
         goalId,
         title: project.title,
         status: "not_started",
+        progress: 0,
         createdAt: new Date(),
+        updatedAt: new Date(),
       });
 
       projectsCreated++;
 
+      await logActivity(
+        "PROJECT_CREATED",
+        `Created project: ${project.title}`,
+      );
+
       const projectId = projectResult.insertedId;
 
+      const priorities = ["High", "Medium", "Low"];
+
       for (const task of project.tasks) {
+        const priority =
+          priorities[
+            Math.floor(Math.random() * priorities.length)
+          ];
+
         await db.collection("tasks").insertOne({
           goalId,
           projectId,
           title: task,
           completed: false,
+          priority,
           createdAt: new Date(),
+          updatedAt: new Date(),
         });
 
         tasksCreated++;
+
+        await logActivity(
+          "TASK_CREATED",
+          `Created task: ${task}`,
+        );
       }
     }
+
+    await logActivity(
+      "AI_PLAN_GENERATED",
+      `Generated execution plan for ${body.title}`,
+    );
 
     return NextResponse.json({
       success: true,
@@ -63,12 +91,19 @@ export async function POST(req: NextRequest) {
       tasksCreated,
     });
   } catch (error) {
+    console.error(error);
+
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : "Unknown error",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Unknown error",
       },
-      { status: 500 },
+      {
+        status: 500,
+      },
     );
   }
 }
