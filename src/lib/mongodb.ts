@@ -2,13 +2,17 @@ import { MongoClient } from "mongodb";
 
 const uri = process.env.MONGODB_URI!;
 
-let client: MongoClient;
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+const clientPromise: Promise<MongoClient> = global._mongoClientPromise ?? (() => {
+  const client = new MongoClient(uri);
+  return (global._mongoClientPromise = client.connect());
+})();
 
 export async function getDb() {
-  if (!client) {
-    client = new MongoClient(uri);
-    await client.connect();
-  }
+  const client = await clientPromise;
 
   return client.db("lifeops");
 }

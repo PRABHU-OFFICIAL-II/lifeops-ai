@@ -4,14 +4,49 @@ import { useEffect, useState } from "react";
 import StatCard from "@/src/components/StatCard";
 
 export default function Dashboard() {
-  const [review, setReview] = useState<any>(null);
-  const [goals, setGoals] = useState<any[]>([]);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [tasks, setTasks] = useState<any[]>([]);
+  interface Review {
+    totalGoals: number;
+    totalProjects: number;
+    totalTasks: number;
+    completedTasks: number;
+    progress: number;
+  }
+
+  interface WeeklyReview {
+    productivityScore: number;
+    completedThisWeek: number;
+    summary: string;
+  }
+
+  interface Goal {
+    _id: string;
+    title: string;
+  }
+
+  interface Project {
+    _id: string;
+    title: string;
+  }
+
+  interface Task {
+    _id: string;
+    title: string;
+    completed: boolean;
+  }
+
+  interface ActivityItem {
+    _id: string;
+    message: string;
+  }
+
+  const [review, setReview] = useState<Review | null>(null);
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [goal, setGoal] = useState("");
   const [loading, setLoading] = useState(false);
-  const [activity, setActivity] = useState<any[]>([]);
-  const [weeklyReview, setWeeklyReview] = useState<any>(null);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
+  const [weeklyReview, setWeeklyReview] = useState<WeeklyReview | null>(null);
 
   async function loadData() {
     const reviewRes = await fetch("/api/review");
@@ -30,7 +65,6 @@ export default function Dashboard() {
     const activityData = await activityRes.json();
 
     const weeklyRes = await fetch("/api/review/weekly");
-
     const weeklyData = await weeklyRes.json();
 
     setReview(reviewData);
@@ -42,7 +76,10 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
-    loadData();
+    const initialize = async () => {
+      await loadData();
+    };
+    initialize();
   }, []);
 
   async function createGoal() {
@@ -68,7 +105,7 @@ export default function Dashboard() {
     }
   }
 
-  async function toggleTask(task: any) {
+  async function toggleTask(task: Task) {
     await fetch(`/api/tasks/${task._id}`, {
       method: "PATCH",
       headers: {
@@ -82,169 +119,179 @@ export default function Dashboard() {
     await loadData();
   }
 
-  if (!review) {
-    return <div style={{ padding: 20 }}>Loading...</div>;
+  if (!review || !weeklyReview) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-8">
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-8 text-white mb-8">
-        <h1 className="text-5xl font-bold">🚀 LifeOps AI</h1>
+    <div className="min-h-screen bg-slate-100 flex">
+      {/* Main Content */}
+      <main className="flex-1 p-8">
+        {/* Header */}
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold text-slate-900">LifeOps AI</h1>
 
-        <p className="mt-2 text-lg">
-          Turn goals into executable plans automatically
-        </p>
-      </div>
+            <p className="text-slate-500 mt-1">AI-powered execution system</p>
+          </div>
 
-      <hr />
+          <div className="bg-white rounded-2xl border border-slate-200 px-6 py-4 shadow-sm">
+            <div className="text-xs text-slate-500">Productivity</div>
 
-      <div style={{ marginTop: 20 }}>
-        <input
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
-          placeholder="Become Staff Engineer in 6 months"
-          style={{
-            width: "70%",
-            padding: 12,
-            marginRight: 10,
-          }}
-        />
-
-        <button onClick={createGoal} disabled={loading}>
-          {loading ? "Generating..." : "Generate AI Plan"}
-        </button>
-      </div>
-
-      <hr />
-
-      <h2 className="text-2xl font-bold mb-4">📊 Progress Overview</h2>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Goals" value={review.totalGoals} />
-
-        <StatCard title="Projects" value={review.totalProjects} />
-
-        <StatCard title="Tasks" value={review.totalTasks} />
-
-        <StatCard title="Completed" value={review.completedTasks} />
-      </div>
-
-      <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-6 mb-8">
-        <h3 className="text-xl font-bold mb-4">🤖 Weekly AI Review</h3>
-
-        <p>
-          Productivity Score:
-          <span className="font-bold ml-2 text-green-600">
-            {weeklyReview.productivityScore}%
-          </span>
-        </p>
-
-        <p>
-          Tasks Completed:
-          <span className="font-bold ml-2">
-            {weeklyReview.completedThisWeek}
-          </span>
-        </p>
-
-        <p className="mt-3 text-slate-600">{weeklyReview.summary}</p>
-      </div>
-
-      <div
-        style={{
-          width: 400,
-          border: "1px solid #ccc",
-          height: 20,
-          marginBottom: 10,
-        }}
-      >
-        <div
-          style={{
-            width: `${review.progress}%`,
-            height: "100%",
-            backgroundColor: "green",
-          }}
-        />
-      </div>
-
-      <div>{review.progress}% Complete</div>
-
-      <hr />
-
-      <h2>🎯 Goals</h2>
-
-      {goals.map((goal) => (
-        <div
-          key={goal._id}
-          style={{
-            border: "1px solid #ccc",
-            padding: 12,
-            marginBottom: 10,
-          }}
-        >
-          {goal.title}
+            <div className="text-3xl font-bold text-indigo-600">
+              {weeklyReview.productivityScore}%
+            </div>
+          </div>
         </div>
-      ))}
 
-      <hr />
-      <hr />
+        {/* Goal Input */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border mb-8">
+          <div className="flex gap-4">
+            <input
+              value={goal}
+              onChange={(e) => setGoal(e.target.value)}
+              placeholder="Become Staff Engineer in 6 months..."
+              className="flex-1 border rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-      <h2>📁 Projects & Tasks</h2>
+            <button
+              onClick={createGoal}
+              disabled={loading}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-xl font-medium transition"
+            >
+              {loading ? "Generating..." : "Generate Plan"}
+            </button>
+          </div>
+        </div>
 
-      {projects.map((project) => {
-        const projectTasks = tasks.filter(
-          (task) => String(task.projectId) === String(project._id),
-        );
+        {/* Stats */}
+        <h2 className="text-2xl font-bold mb-4">📊 Progress Overview</h2>
 
-        return (
-          <div
-            key={project._id}
-            style={{
-              border: "1px solid #ccc",
-              padding: 12,
-              marginBottom: 12,
-            }}
-          >
-            <h3>{project.title}</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+          <StatCard title="Goals" value={review.totalGoals} />
+          <StatCard title="Projects" value={review.totalProjects} />
+          <StatCard title="Tasks" value={review.totalTasks} />
+          <StatCard title="Completed" value={review.completedTasks} />
+          <StatCard
+            title="Productivity"
+            value={weeklyReview?.productivityScore ?? 0}
+          />
+        </div>
 
-            {projectTasks.length === 0 ? (
-              <p>No tasks found</p>
-            ) : (
-              projectTasks.map((task) => (
+        {/* AI Review */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-8">
+          <h2 className="text-xl font-bold text-slate-900 mb-5">
+            AI Weekly Review
+          </h2>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="mt-5">
+              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  key={task._id}
+                  className="h-full bg-indigo-600"
                   style={{
-                    marginLeft: 20,
-                    marginBottom: 8,
+                    width: `${weeklyReview.productivityScore}%`,
                   }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <p className="mt-6 opacity-90">{weeklyReview.summary}</p>
+        </div>
+
+        {/* Goals */}
+        <h2 className="text-2xl font-bold mb-4">🎯 Goals</h2>
+
+        <div className="grid md:grid-cols-2 gap-4 mb-8">
+          {goals.map((goal) => (
+            <div
+              key={goal._id}
+              className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm"
+            >
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-slate-900">{goal.title}</h3>
+
+                <span className="text-xs bg-green-100 text-green-700 px-3 py-1 rounded-full">
+                  Active
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Projects + Tasks */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border">
+            <h2 className="text-xl font-bold mb-4">📁 Projects</h2>
+
+            <div className="space-y-3">
+              {projects.map((project) => (
+                <div
+                  key={project._id}
+                  className="border rounded-xl p-4 hover:bg-slate-50"
+                >
+                  <div className="flex justify-between items-center">
+                    <span>{project.title}</span>
+
+                    <span className="text-xs text-slate-500">Project</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl p-6 shadow-sm border">
+            <h2 className="text-xl font-bold mb-4">✅ Tasks</h2>
+
+            <div className="space-y-3 max-h-[500px] overflow-y-auto">
+              {tasks.map((task) => (
+                <label
+                  key={task._id}
+                  className="flex items-center gap-3 p-3 rounded-xl border border-slate-100 hover:bg-slate-50 cursor-pointer"
                 >
                   <input
                     type="checkbox"
                     checked={task.completed}
                     onChange={() => toggleTask(task)}
-                  />{" "}
-                  {task.title}
-                </div>
-              ))
-            )}
+                  />
+
+                  <span
+                    className={
+                      task.completed
+                        ? "line-through text-slate-400"
+                        : "text-slate-700"
+                    }
+                  >
+                    {task.title}
+                  </span>
+                </label>
+              ))}
+            </div>
           </div>
-        );
-      })}
-
-      <hr />
-
-      <h2>📜 Recent Activity</h2>
-
-      {activity.map((item) => (
-        <div
-          key={item._id}
-          style={{
-            borderBottom: "1px solid #eee",
-            padding: "8px 0",
-          }}
-        >
-          {item.message}
         </div>
-      ))}
+
+        {/* Activity Feed */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-xl font-bold mb-4">📜 Recent Activity</h2>
+
+          <div className="max-h-[300px] overflow-y-auto">
+            {activity.map((item) => (
+              <div key={item._id} className="flex gap-4 mb-4">
+                <div className="w-3 h-3 rounded-full bg-indigo-600 mt-2" />
+
+                <div className="flex-1 bg-slate-50 rounded-xl p-3">
+                  {item.message}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
