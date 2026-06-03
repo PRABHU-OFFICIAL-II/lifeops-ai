@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+
 export default function Home() {
-  return <div>LifeOps AI</div>;
+  redirect("/dashboard");
 }
